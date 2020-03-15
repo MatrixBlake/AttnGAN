@@ -516,7 +516,7 @@ class condGANTrainer(object):
                                 fullpath = '%s_a%d.png' % (save_name, k)
                                 im.save(fullpath)
                                 
-                         _, cnn_code = image_encoder(fake_imgs[-1])
+                        _, cnn_code = image_encoder(fake_imgs[-1])
 
                         for i in range(batch_size):
                             mis_captions, mis_captions_len = self.dataset.get_mis_caption(class_ids[i])
