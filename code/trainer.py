@@ -26,7 +26,7 @@ import sys
 
 # ################# Text to image task############################ #
 class condGANTrainer(object):
-    def __init__(self, output_dir, data_loader, n_words, ixtoword):
+    def __init__(self, output_dir, data_loader, n_words, ixtoword, dataset):
         if cfg.TRAIN.FLAG:
             self.model_dir = os.path.join(output_dir, 'Model')
             self.image_dir = os.path.join(output_dir, 'Image')
@@ -39,6 +39,7 @@ class condGANTrainer(object):
         self.batch_size = cfg.TRAIN.BATCH_SIZE
         self.max_epoch = cfg.TRAIN.MAX_EPOCH
         self.snapshot_interval = cfg.TRAIN.SNAPSHOT_INTERVAL
+        self.dataset=dataset
 
         self.n_words = n_words
         self.ixtoword = ixtoword
@@ -368,6 +369,15 @@ class condGANTrainer(object):
             text_encoder = text_encoder.cuda()
             text_encoder.eval()
 
+            #load image encoder
+            image_encoder = CNN_ENCODER(cfg.TEXT.EMBEDDING_DIM)
+            img_encoder_path = cfg.TRAIN.NET_E.replace('text_encoder', 'image_encoder')
+            state_dict = torch.load(img_encoder_path, map_location=lambda storage, loc: storage)
+            image_encoder.load_state_dict(state_dict)
+            print('Load image encoder from:', img_encoder_path)
+            image_encoder = image_encoder.cuda()
+            image_encoder.eval()
+
             batch_size = self.batch_size
             nz = cfg.GAN.Z_DIM
             noise = Variable(torch.FloatTensor(batch_size, nz), volatile=True)
@@ -386,6 +396,8 @@ class condGANTrainer(object):
             mkdir_p(save_dir)
 
             cnt = 0
+            R_count = 0
+            R = np.zeros(30000)
 
             for _ in range(1):  # (cfg.TEXT.CAPTIONS_PER_IMAGE):
                 for step, data in enumerate(self.data_loader, 0):
